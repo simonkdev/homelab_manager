@@ -9,17 +9,19 @@ def get_devices():
     is a dict with the keys IP (ip address), 
     UNAME (username) and PASSWD (password).
     """
-    with open('devices.csv', 'r') as file:
-        devices = [line.strip() for line in file.readlines()]
-
-    keys = ["IP", "UNAME", "PASSWD"]
+    file = open('devices.csv', 'r') 
+    devices = [line.strip() for line in file.readlines()]
+    keys = ["NAME", "IP", "UNAME", "PASSWD"]
     targets = []
+    
     i = 0
+
     for each in devices:
-        current = str(devices[i])
-        vals = csv.reader([current])
+        current = devices[i]
+        vals = next(csv.reader([current]))
         obj = dict(zip(keys, vals))
         i += 1
         targets.append(obj)
-
     return(targets)
+
+print(get_devices())
