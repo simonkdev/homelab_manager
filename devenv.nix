@@ -8,6 +8,7 @@
   packages = with pkgs.python313Packages; [
     inquirerpy
     pandas
+    paramiko
   ];
   languages.python = {
     enable = true;
