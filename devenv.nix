@@ -9,6 +9,8 @@
     inquirerpy
     pandas
     paramiko
+    pyinstaller
+    nuitka
   ];
   languages.python = {
     enable = true;
