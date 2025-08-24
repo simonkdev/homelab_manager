@@ -22,7 +22,13 @@ def get_devices():
     is a dict with the keys NAME (name of device), IP (ip address), 
     UNAME (username) and PASSWD (password).
     """
-    file = open('devices.csv', 'r') 
+    try:
+        file = open('devices.csv', 'r')
+    except FileNotFoundError:
+        print("[ ERROR ] The file devices.csv does not exist! Creating it...")
+        df = pd.DataFrame(columns=["NAME", "IP", "UNAME", "PASSWD"])
+        df.to_csv("devices.csv", index=False)
+        file = open('devices.csv', 'r')
     devices = [line.strip() for line in file.readlines()]
     keys = ["NAME", "IP", "UNAME", "PASSWD"]
     targets = []
@@ -65,49 +71,61 @@ def add_device():
     new_device = pd.DataFrame([{"NAME": name, "IP": ip, "UNAME": uname, "PASSWD": passwd}])
     new_device.to_csv("devices.csv", mode="a", header=False, index=False)
     print("Device added successfully.")
+    cont_ = inquirer.select(
+        message="Would you like to establish a connection to it immediately?",
+        choices=["Yes", "No"]
+    ).execute()
+    if cont_ == "No":
+        return 0
+    else:
+        establish_connection(name)
 
 def view_devices():
     """
     Prints all available devices with name and IP into the terminal.
     """
     devices = get_devices()
-    if not devices:
-        print("no devices available in the csv file!")
+    if devices == [] or devices == [{'NAME': 'NAME', 'IP': 'IP', 'UNAME': 'UNAME', 'PASSWD': 'PASSWD'}]:
+        print("There are no devices available in the csv file!")
     else:
         for device in devices:
             if device['NAME'] == "NAME":
                 continue
             print(f"{device['NAME']} with IP: {device['IP']}")
 
-def establish_connection():
+def establish_connection(name = "select"):
+    
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
     devices = get_devices()
+    if devices == [] or devices == [{'NAME': 'NAME', 'IP': 'IP', 'UNAME': 'UNAME', 'PASSWD': 'PASSWD'}] or not devices:
+        print("There are no devices available in the csv file! Please add one first.")
+        return 0
+    
     choices = []
     for device in devices:
         if device['NAME'] == "NAME":
             continue
-        name = device['NAME']
-        choices.append(name)
-    if not devices:
-        print("There are no devices available.")
-        return 0
-    else:
+        device_name = device['NAME']
+        choices.append(device_name)
+    
+    if name == "select":
         target = inquirer.select(
             message = "Which device would you like to connect to?",
             choices = choices
         ).execute()
+    else:
+        target = name
+    
     for device in devices:
         if device['NAME'] != target:
             continue
         print(f"Establishing a connection with {target}")
         ssh.connect(device['IP'], username=device['UNAME'], password=device['PASSWD'])
+    
     chan = ssh.invoke_shell()
-
-# Start a thread to print remote output
     threading.Thread(target=interactive_shell, args=(chan,), daemon=True).start()
-
-# Send user input to the remote shell
     try:
         while True:
             cmd = sys.stdin.readline()
@@ -157,5 +175,7 @@ def main():
         establish_connection()
     elif action == "Remove an SSH device":
         remove_device()
-
-main()
+try:
+    main()
+except KeyboardInterrupt:
+    print("*KeyboardInterrupt*")

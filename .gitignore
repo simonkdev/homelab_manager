@@ -1,7 +1,7 @@
 # Devenv
 .devenv*
 devenv.local.nix
-
+devices.csv
 # direnv
 .direnv
 
